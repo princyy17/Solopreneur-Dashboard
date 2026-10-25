@@ -1,0 +1,131 @@
+﻿@model AddProjectVM
+
+<partial name="_ClientSideValidation" />
+
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center overflow-auto">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
+        <button id="closeModal" class="absolute top-2 p-4 right-2 text-gray-500 hover:text-gray-800 text-2xl">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h2 class="text-xl font-semibold">Create New Project</h2>
+        <p class="text-gray-500 text-sm mb-4">Add a new project with all its details and milestones.</p>
+
+
+        <form method="post" asp-action="SaveAdd" asp-controller="Project">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium">Project Name</label>
+                    <input type="text" placeholder="Enter project name" class="w-full border p-2 rounded-md" asp-for="Name">
+                    <span asp-validation-for="Name" class="text-red-500 text-xs"></span>
+
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Client</label>
+                    <select asp-for="ClientId" class="w-full border p-2 rounded-md" >
+                        @foreach (Client client in ViewBag.Clients)
+                        {
+                            <option value="@client.Id">@client.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ClientId" class="text-red-500 text-xs"></span>
+
+                </div>
+
+
+               </div>
+
+            <div>
+                <label class="block text-sm font-medium">Company</label>
+                <input class="w-full border p-2 rounded-md" asp-for="Company">
+                <span asp-validation-for="Company" class="text-red-500 text-xs"></span>
+
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium">Start Date</label>
+                    <input type="date" class="w-full border p-2 rounded-md" asp-for="StartDate">
+                    <span asp-validation-for="StartDate" class="text-red-500 text-xs"></span>
+
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">End Date</label>
+                    <input type="date" class="w-full border p-2 rounded-md" asp-for="EndDate">
+                    <span asp-validation-for="EndDate" class="text-red-500 text-xs"></span>
+
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Budget</label>
+                    <input type="number" value="0" class="w-full border p-2 rounded-md" asp-for="Budget">
+                    <span asp-validation-for="Budget" class="text-red-500 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Hourly Rate</label>
+                    <input asp type="number" value="0" class="w-full border p-2 rounded-md" asp-for="HourlyRate">
+                    <span asp-validation-for="HourlyRate" class="text-red-500 text-xs"></span>
+
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Category</label>
+                    <select asp-for="category" class="w-full border p-2 rounded-md">
+                        <option value="Development">Development</option>
+                        <option value="Design">Design</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Consulting">Consulting</option>
+
+                    </select>
+                    <span asp-validation-for="category" class="text-red-500 text-xs"></span>
+
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Priority</label>
+                    <select asp-for="Priority" class="w-full border p-2 rounded-md">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                    <span asp-validation-for="Priority" class="text-red-500 text-xs"></span>
+
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium">Description</label>
+                <textarea placeholder="Enter project description" class="w-full border p-2 rounded-md" asp-for="Description"></textarea>
+                <span asp-validation-for="Description" class="text-red-500 text-xs"></span>
+
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <input type="submit" value="Create Project" class="bg-black text-white px-4 py-2 rounded-md">
+                    
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+
+    $(document).ready(function () {
+      $("#openModal").click(function () {
+        $("#modal").removeClass("hidden");
+      });
+
+      $("#closeModal").click(function () {
+        $("#modal").addClass("hidden");
+      });
+
+      $(document).click(function (event) {
+        if (!$(event.target).closest("#modal div").length && !$(event.target).is("#openModal")) {
+          $("#modal").addClass("hidden");
+        }
+      });
+    });
+</script>

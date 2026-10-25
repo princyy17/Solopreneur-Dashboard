@@ -1,0 +1,256 @@
+@model List<TimeTrackingVM>
+@{
+    ViewData["Title"] = "Time Tracker";
+}
+
+<style>
+@@keyframes timerPulse { 0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.35)} 70%{box-shadow:0 0 0 16px rgba(99,102,241,0)} }
+.timer-running { animation: timerPulse 1.8s ease-out infinite; }
+@@keyframes entryFade { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
+.entry-row { animation: entryFade 0.35s ease both; }
+</style>
+
+<!-- Header + today's summary -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Time Tracker</h1>
+        <p class="text-gray-500 text-sm mt-1">Track time spent on your tasks</p>
+    </div>
+    <div class="flex gap-3">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-center min-w-[90px]">
+            <p class="text-xs text-gray-400 font-medium">Today</p>
+            <p class="text-xl font-bold text-indigo-600" id="todayTotal">--:--</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-center min-w-[90px]">
+            <p class="text-xs text-gray-400 font-medium">Sessions</p>
+            <p class="text-xl font-bold text-gray-900">@Model.Count</p>
+        </div>
+    </div>
+</div>
+
+<!-- Toast area -->
+<div id="alertBox" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm"></div>
+
+<!-- Timer card -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+    <!-- Ring + time display -->
+    <div class="flex flex-col items-center mb-6">
+        <div class="relative w-48 h-48 mb-4" id="timerRingWrap">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="#f1f5f9" stroke-width="8"/>
+                <circle id="progressRing" cx="60" cy="60" r="54" fill="none"
+                        stroke="#6366f1" stroke-width="8" stroke-linecap="round"
+                        stroke-dasharray="339.3" stroke-dashoffset="339.3"
+                        style="transition: stroke-dashoffset 0.5s ease"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <div id="stopwatch" class="text-4xl font-mono font-bold text-gray-900 tabular-nums">00:00:00</div>
+                <div id="timerStatus" class="text-xs text-gray-400 mt-1 font-medium">Ready</div>
+            </div>
+        </div>
+
+        <!-- Task selector -->
+        <div class="w-full max-w-sm">
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 text-center tracking-wide uppercase">Select Task</label>
+            <select id="TaskSelected" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
+                <option value="" selected disabled>Choose a task to track...</option>
+                @foreach (var item in ViewBag.AvailableMissions)
+                {
+                    <option value="@item.Id">@item.Title</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex gap-3 max-w-xs mx-auto">
+        <button id="startPauseBtn" onclick="toggleTimer()"
+                class="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors">
+            <i class="fa-solid fa-play"></i> Start
+        </button>
+        <button onclick="stop()"
+                class="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-6 py-3 rounded-xl font-semibold text-sm transition-colors">
+            <i class="fa-solid fa-stop"></i> Stop &amp; Save
+        </button>
+    </div>
+
+    <!-- Lap info -->
+    <p id="lapInfo" class="text-center text-xs text-gray-400 mt-3"></p>
+</div>
+
+<!-- Recent entries -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h3 class="font-bold text-gray-900">Time Entries</h3>
+        @if (Model.Any())
+        {
+            <span class="text-xs text-gray-400">@Model.Count @(Model.Count == 1 ? "entry" : "entries")</span>
+        }
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="divide-y divide-gray-50">
+            @foreach (var item in Model)
+            {
+                <div id="timetrakingId-@item.Id" class="entry-row flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-4 hover:bg-gray-50 transition-colors gap-3">
+                    <div class="space-y-1">
+                        @foreach (var mission in ViewBag.AvailableMissions)
+                        {
+                            if (mission.Id == item.MissionId)
+                            {
+                                <h4 class="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span>
+                                    @mission.Title
+                                </h4>
+                            }
+                        }
+                        <div class="flex gap-4 text-xs text-gray-500">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-regular fa-clock text-indigo-400"></i>
+                                <strong class="text-gray-700 font-semibold">@item.Duration</strong>
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-regular fa-calendar text-gray-400"></i>
+                                @item.Date
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="DeleteTask(@item.Id)"
+                            class="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl transition-colors border border-transparent hover:border-red-100">
+                        <i class="fa-solid fa-trash-can"></i> Delete
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-12">
+            <i class="fa-solid fa-clock text-4xl text-gray-200 mb-3"></i>
+            <p class="text-gray-400 text-sm">No time entries yet. Start the timer!</p>
+        </div>
+    }
+</div>
+
+<script>
+let timer, running = false, startTime, elapsedTime = 0, selectedValue = '';
+let totalDailyMs = 0;
+const MAX_SESSION = 8 * 3600000; // 8h ring
+
+/* ── Compute today's total from entries ── */
+(function computeToday(){
+    const durations = [@Html.Raw(string.Join(",", Model.Select(m => $"\"{m.Duration}\"")))];
+    let total = 0;
+    durations.forEach(d => {
+        const parts = d.split(':').map(Number);
+        if(parts.length===3) total += parts[0]*3600000 + parts[1]*60000 + parts[2]*1000;
+    });
+    totalDailyMs = total;
+    document.getElementById('todayTotal').textContent = fmtMs(total);
+})();
+
+document.getElementById('TaskSelected').addEventListener('change', function(){ selectedValue = this.value; });
+
+function fmtMs(ms){
+    const h = String(Math.floor(ms/3600000)).padStart(2,'0');
+    const m = String(Math.floor((ms%3600000)/60000)).padStart(2,'0');
+    const s = String(Math.floor((ms%60000)/1000)).padStart(2,'0');
+    return `${h}:${m}:${s}`;
+}
+
+function updateDisplay(){
+    const total = elapsedTime + (running ? Date.now() - startTime : 0);
+    document.getElementById('stopwatch').textContent = fmtMs(total);
+
+    // ring progress (0–8h)
+    const pct = Math.min(total / MAX_SESSION, 1);
+    const circ = 2 * Math.PI * 54; // 339.3
+    document.getElementById('progressRing').style.strokeDashoffset = circ * (1 - pct);
+    document.getElementById('progressRing').style.stroke = pct > 0.8 ? '#ef4444' : pct > 0.5 ? '#f59e0b' : '#6366f1';
+    if(running) requestAnimationFrame(updateDisplay);
+}
+
+function toggleTimer(){
+    const btn = document.getElementById('startPauseBtn');
+    const status = document.getElementById('timerStatus');
+    const wrap = document.getElementById('timerRingWrap');
+
+    if(!running){
+        startTime = Date.now();
+        running = true;
+        updateDisplay();
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+        btn.classList.replace('bg-indigo-600','bg-amber-500');
+        btn.classList.replace('hover:bg-indigo-700','hover:bg-amber-600');
+        status.textContent = 'Running...';
+        status.classList.add('text-indigo-500');
+        wrap.classList.add('timer-running');
+        document.getElementById('lapInfo').textContent = '';
+    } else {
+        elapsedTime += Date.now() - startTime;
+        running = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume';
+        btn.classList.replace('bg-amber-500','bg-indigo-600');
+        btn.classList.replace('hover:bg-amber-600','hover:bg-indigo-700');
+        status.textContent = 'Paused';
+        status.classList.remove('text-indigo-500');
+        wrap.classList.remove('timer-running');
+        document.getElementById('lapInfo').textContent = `Elapsed: ${fmtMs(elapsedTime)}`;
+    }
+}
+
+function stop(){
+    if(!selectedValue){ showAlert('error','Please select a task before saving.'); return; }
+    if(elapsedTime === 0 && !running){ showAlert('error','No time recorded yet. Start the timer first.'); return; }
+
+    if(running){ elapsedTime += Date.now() - startTime; running = false; }
+    const btn = document.getElementById('startPauseBtn');
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+    btn.className = 'flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors';
+    document.getElementById('timerStatus').textContent = 'Saving...';
+    document.getElementById('timerRingWrap').classList.remove('timer-running');
+
+    fetch('/TimeTracking/SaveTimeTracking',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ MissionId: parseInt(selectedValue), Duration: fmtMs(elapsedTime) })
+    })
+    .then(r=>r.json())
+    .then(data=>{ if(data.sucess) window.location.href='/TimeTracking/Index'; else showAlert('error','Failed to save.'); })
+    .catch(()=>showAlert('error','Network error.'));
+
+    // reset
+    elapsedTime = 0;
+    document.getElementById('stopwatch').textContent = '00:00:00';
+    document.getElementById('progressRing').style.strokeDashoffset = '339.3';
+    document.getElementById('timerStatus').textContent = 'Ready';
+    document.getElementById('lapInfo').textContent = '';
+}
+
+function DeleteTask(id){
+    if(!confirm('Delete this time entry?')) return;
+    fetch('/TimeTracking/Delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(id)})
+    .then(r=>r.json())
+    .then(data=>{
+        if(data.success){
+            const el = document.getElementById(`timetrakingId-${id}`);
+            el.style.animation='none'; el.style.opacity='0'; el.style.transform='translateX(-12px)';
+            el.style.transition='all 0.3s ease';
+            setTimeout(()=>el.remove(),300);
+        }
+    });
+}
+
+function showAlert(type, msg){
+    const colors = type==='error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-green-50 border-green-200 text-green-800';
+    const icon   = type==='error' ? 'fa-circle-xmark text-red-500' : 'fa-circle-check text-green-500';
+    document.getElementById('alertBox').innerHTML = `
+        <div class="${colors} border rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3">
+            <i class="fa-solid ${icon}"></i>
+            <span class="flex-1 text-sm font-medium">${msg}</span>
+            <button onclick="this.closest('[class*=border]').remove()" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+        </div>`;
+    setTimeout(()=>{ const a=document.getElementById('alertBox').firstChild; if(a){a.style.opacity='0';a.style.transition='opacity 0.3s';setTimeout(()=>a?.remove(),300);} },5000);
+}
+</script>

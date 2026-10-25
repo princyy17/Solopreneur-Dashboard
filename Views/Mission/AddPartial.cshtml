@@ -1,0 +1,77 @@
+﻿@model MissionViewModel
+
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center overflow-auto z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
+        <a asp-action="Index" class="absolute top-2 p-4 right-2 text-gray-500 hover:text-gray-800 text-2xl">
+            <i class="fa-solid fa-xmark"></i>
+        </a>
+
+        <h2 class="text-xl font-semibold">Add Mission</h2>
+        <p class="text-gray-500 text-sm mb-4">Fill in the mission details below.</p>
+
+        <form asp-action="SaveAdd" asp-controller="Mission" method="post">
+            <input asp-for="Id" type="hidden" />
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium">Title</label>
+                    <input asp-for="Title" class="w-full border p-2 rounded-md" />
+                    <span asp-validation-for="Title" class="text-red-500 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Deadline</label>
+                    <input asp-for="Deadline" type="datetime-local" class="w-full border p-2 rounded-md" />
+                    <span asp-validation-for="Deadline" class="text-red-500 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Status</label>
+                    <select asp-for="Status" class="w-full border p-2 rounded-md">
+                        <option value="NotStarted">Not Started</option>
+                        <option value="InProgress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                    <span asp-validation-for="Status" class="text-red-500 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">Priority</label>
+                    <select asp-for="Priority" class="w-full border p-2 rounded-md">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                    <span asp-validation-for="Priority" class="text-red-500 text-xs"></span>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium">Project</label>
+                <select asp-for="ProjectId" class="w-full border p-2 rounded-md">
+                    @foreach (var project in ViewBag.ProjectList)
+                    {
+                        <option value="@project.Id" selected="@(project.Id == Model.ProjectId ? "selected" : null)">
+                            @project.Name
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="ProjectId" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium">Description</label>
+                <textarea asp-for="Description" rows="3" class="w-full border p-2 rounded-md"></textarea>
+                <span asp-validation-for="Description" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <button type="submit" class="bg-black text-white px-4 py-2 rounded-md">Create Mission</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>

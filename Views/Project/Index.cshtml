@@ -1,0 +1,260 @@
+@using FreelanceManager.Enums
+@model List<AllProjectsVM>
+@{
+    ViewData["Title"] = "Projects";
+}
+
+<style>
+@@keyframes cardIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+.proj-card { animation: cardIn 0.35s ease both; }
+.pill.active { background:#1e293b; color:#fff; border-color:#1e293b; }
+.sort-btn.active { background:#eff6ff; color:#1d4ed8; }
+.progress-bar { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+</style>
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Projects</h1>
+        <p class="text-gray-500 text-sm mt-1"><span id="projCount">@Model.Count</span> projects total</p>
+    </div>
+    <a href="/Project/Create"
+       class="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shrink-0">
+        <i class="fa-solid fa-plus"></i> New Project
+    </a>
+</div>
+
+<!-- Filter bar -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
+    <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input id="projSearch" type="text" placeholder="Search projects..."
+                   class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"/>
+        </div>
+        <div class="flex gap-1.5">
+            <button class="sort-btn active text-xs px-3 py-2 rounded-xl border border-gray-200 font-medium transition-colors" data-sort="default">Default</button>
+            <button class="sort-btn text-xs px-3 py-2 rounded-xl border border-gray-200 font-medium text-gray-600 transition-colors" data-sort="deadline">Deadline ↑</button>
+            <button class="sort-btn text-xs px-3 py-2 rounded-xl border border-gray-200 font-medium text-gray-600 transition-colors" data-sort="name">Name A–Z</button>
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3 items-center">
+        <span class="text-xs text-gray-400 mr-1">Status:</span>
+        <button class="pill active text-xs px-3 py-1.5 rounded-full border border-gray-200 font-medium transition-all" data-val="">All</button>
+        <button class="pill text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-val="NotStarted">
+            <span class="w-2 h-2 rounded-full bg-gray-400 inline-block mr-1"></span>Not Started
+        </button>
+        <button class="pill text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-val="InProgress">
+            <span class="w-2 h-2 rounded-full bg-blue-500 inline-block mr-1"></span>In Progress
+        </button>
+        <button class="pill text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-val="Completed">
+            <span class="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span>Completed
+        </button>
+        <span class="w-px bg-gray-200 self-stretch mx-1"></span>
+        <span class="text-xs text-gray-400 mr-1">Priority:</span>
+        <button class="pill-p active text-xs px-3 py-1.5 rounded-full border border-gray-200 font-medium transition-all" data-pval="">All</button>
+        <button class="pill-p text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-pval="High">
+            <span class="w-2 h-2 rounded-full bg-red-500 inline-block mr-1"></span>High
+        </button>
+        <button class="pill-p text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-pval="Medium">
+            <span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>Medium
+        </button>
+        <button class="pill-p text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-pval="Low">
+            <span class="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span>Low
+        </button>
+    </div>
+</div>
+
+<div id="emptyProjects" class="hidden text-center py-16 bg-white rounded-2xl border border-gray-100">
+    <i class="fa-solid fa-folder-open text-4xl text-gray-200 mb-3"></i>
+    <p class="text-gray-500 font-medium">No projects match your filters</p>
+    <button onclick="clearProjFilters()" class="mt-3 text-blue-600 text-sm hover:underline">Clear filters</button>
+</div>
+
+<div id="projGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
+    @foreach (var project in Model)
+    {
+        var statusStr  = project.ProjectStatus.ToString();
+        var statusCls  = statusStr == "Completed" ? "bg-green-100 text-green-700"
+                       : statusStr == "InProgress" ? "bg-blue-100 text-blue-700"
+                       : "bg-gray-100 text-gray-600";
+        var prioCls    = project.Priority == priority.High   ? "bg-red-100 text-red-700"
+                       : project.Priority == priority.Medium ? "bg-amber-100 text-amber-700"
+                       : "bg-green-100 text-green-700";
+        var barColor   = statusStr == "Completed" ? "bg-green-500"
+                       : statusStr == "InProgress" ? "bg-blue-500" : "bg-gray-300";
+        var accentColor = statusStr == "Completed" ? "bg-green-500"
+                        : statusStr == "InProgress" ? "bg-blue-500" : "bg-gray-200";
+        var overdue    = project.EndDate < DateTime.Now && statusStr != "Completed";
+        var statusLabel = statusStr == "InProgress" ? "In Progress"
+                        : statusStr == "NotStarted" ? "Not Started" : "Completed";
+        int barPct = project.AllMissionsCount > 0
+            ? (int)((double)project.CompletedMissionsCount / project.AllMissionsCount * 100)
+            : (statusStr == "Completed" ? 100 : 0);
+
+        <div class="proj-card bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col"
+             data-name="@project.Name.ToLower()"
+             data-status="@project.ProjectStatus"
+             data-priority="@project.Priority"
+             data-deadline="@project.EndDate.ToString("yyyy-MM-dd")">
+
+            <div class="h-1.5 rounded-t-2xl @accentColor"></div>
+
+            <div class="p-5 flex-1 flex flex-col">
+                <div class="flex items-start justify-between gap-2 mb-3">
+                    <h3 class="font-bold text-gray-900 text-base leading-snug flex-1">@project.Name</h3>
+                    <div class="flex gap-1.5 shrink-0">
+                        <a href="/Project/Details/@project.Id"
+                           class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors">
+                            <i class="fa-regular fa-eye text-xs"></i>
+                        </a>
+                        <a href="/Project/Edit/@project.Id"
+                           class="w-7 h-7 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </a>
+                        <button onclick="openProjDeleteModal(@project.Id,'@project.Name')"
+                                class="w-7 h-7 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(project.Description))
+                {
+                    <p class="text-xs text-gray-500 mb-3 line-clamp-2">@project.Description</p>
+                }
+
+                <div class="flex gap-2 mb-4 flex-wrap">
+                    <span class="text-xs font-medium px-2.5 py-1 rounded-full @statusCls">@statusLabel</span>
+                    <span class="text-xs font-medium px-2.5 py-1 rounded-full @prioCls">@project.Priority</span>
+                    @if (overdue)
+                    {
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+                            <i class="fa-solid fa-triangle-exclamation mr-0.5"></i>Overdue
+                        </span>
+                    }
+                </div>
+
+                <div class="mt-auto">
+                    <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+                        <span>Progress (@project.CompletedMissionsCount/@project.AllMissionsCount tasks)</span>
+                        <span class="font-semibold text-gray-600">@barPct%</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full progress-bar @barColor" style="width:0%" data-target="@barPct%"></div>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs mt-3 @(overdue ? "text-red-500" : "text-gray-400")">
+                        <i class="fa-regular fa-calendar"></i>
+                        <span>@(overdue ? "Overdue · " : "Due ")@project.EndDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete modal -->
+<div id="projDeleteModal" class="fixed inset-0 z-50 bg-black/50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xs w-full mx-4 overflow-hidden">
+        <div class="bg-red-50 px-6 py-4 border-b border-red-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-folder text-red-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900">Delete Project</h3>
+                    <p class="text-xs text-gray-500" id="projDeleteName"></p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4">
+            <p class="text-sm text-gray-600">This will permanently delete the project and all its tasks. <strong class="text-gray-900">Cannot be undone.</strong></p>
+        </div>
+        <div class="px-6 pb-5 flex gap-3">
+            <button onclick="closeProjDeleteModal()" class="flex-1 border border-gray-200 text-gray-700 hover:bg-gray-50 py-2.5 rounded-xl font-medium text-sm transition-colors">Cancel</button>
+            <form id="projDeleteForm" method="post">
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition-colors">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let pStatus='', pPriority='', pSearch='';
+
+let dt;
+document.getElementById('projSearch').addEventListener('input', function(){
+    clearTimeout(dt);
+    dt = setTimeout(()=>{ pSearch=this.value.toLowerCase(); applyProjFilters(); }, 180);
+});
+
+document.querySelectorAll('.pill').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active'); pStatus=this.dataset.val; applyProjFilters();
+    });
+});
+document.querySelectorAll('.pill-p').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        document.querySelectorAll('.pill-p').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active'); pPriority=this.dataset.pval; applyProjFilters();
+    });
+});
+document.querySelectorAll('.sort-btn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active'); sortProjects(this.dataset.sort);
+    });
+});
+
+function sortProjects(mode){
+    const grid=document.getElementById('projGrid');
+    const cards=[...grid.querySelectorAll('.proj-card')];
+    cards.sort((a,b)=>{
+        if(mode==='deadline') return new Date(a.dataset.deadline)-new Date(b.dataset.deadline);
+        if(mode==='name') return a.dataset.name.localeCompare(b.dataset.name);
+        return 0;
+    });
+    cards.forEach(c=>grid.appendChild(c));
+}
+
+function applyProjFilters(){
+    const cards=document.querySelectorAll('.proj-card');
+    let vis=0;
+    cards.forEach(c=>{
+        const ms=!pSearch||c.dataset.name.includes(pSearch);
+        const ss=!pStatus||c.dataset.status===pStatus;
+        const ps=!pPriority||c.dataset.priority===pPriority;
+        const show=ms&&ss&&ps;
+        c.style.display=show?'':'none';
+        if(show)vis++;
+    });
+    document.getElementById('projCount').textContent=vis;
+    document.getElementById('emptyProjects').classList.toggle('hidden',vis>0);
+}
+
+function clearProjFilters(){
+    document.getElementById('projSearch').value='';
+    pSearch='';pStatus='';pPriority='';
+    document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.pill-p').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.pill[data-val=""]').classList.add('active');
+    document.querySelector('.pill-p[data-pval=""]').classList.add('active');
+    applyProjFilters();
+}
+
+window.addEventListener('load',()=>{
+    setTimeout(()=>{ document.querySelectorAll('.progress-bar').forEach(b=>{ b.style.width=b.dataset.target; }); },300);
+});
+
+function openProjDeleteModal(id,name){
+    document.getElementById('projDeleteName').textContent=name;
+    document.getElementById('projDeleteForm').action='/Project/Delete/'+id;
+    const m=document.getElementById('projDeleteModal');
+    m.classList.remove('hidden');m.classList.add('flex');
+}
+function closeProjDeleteModal(){
+    const m=document.getElementById('projDeleteModal');
+    m.classList.add('hidden');m.classList.remove('flex');
+}
+document.getElementById('projDeleteModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeProjDeleteModal();});
+</script>

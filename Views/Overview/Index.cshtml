@@ -1,0 +1,490 @@
+@using FreelanceManager.Enums
+@model OverviewVM
+@{
+    ViewData["Title"] = "Overview";
+    int tasksNum    = Model.TasksNum;
+    int projectsNum = Model.ProjectsNum;
+    int clientsNum  = Model.ClientsNum;
+    int pendingInv  = (int)Model.PendingInvoices;
+}
+<style>
+@@keyframes countUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.stat-card { animation:countUp 0.5s ease both; }
+.stat-card:nth-child(1){animation-delay:0s;opacity:0}
+.stat-card:nth-child(2){animation-delay:.1s;opacity:0}
+.stat-card:nth-child(3){animation-delay:.2s;opacity:0}
+.stat-card:nth-child(4){animation-delay:.3s;opacity:0}
+@@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+.chart-card { animation:fadeUp 0.6s ease both; }
+</style>
+
+<!-- Greeting -->
+<div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+        <p id="greeting" class="text-sm font-semibold text-blue-600 mb-1"></p>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Dashboard</h1>
+        <p id="dateDisplay" class="text-gray-500 text-sm mt-1"></p>
+    </div>
+    <div class="flex gap-2">
+        <a href="/Mission" class="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded-xl transition-colors">
+            <i class="fa-solid fa-plus"></i> New Task
+        </a>
+        <a href="/Project" class="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm px-4 py-2 rounded-xl transition-colors">
+            <i class="fa-solid fa-folder-plus"></i> New Project
+        </a>
+    </div>
+</div>
+
+<!-- KPI stat cards -->
+<div class="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-5">
+    <a href="/Mission" class="stat-card bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group block">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-xs text-gray-500 mb-1">Active Tasks</p>
+                <p class="font-extrabold text-4xl text-gray-900 counter" data-target="@tasksNum">0</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <i class="fa-solid fa-list-check text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1 text-xs text-green-600"><i class="fa-solid fa-arrow-trend-up"></i> View tasks</div>
+    </a>
+    <a href="/Project" class="stat-card bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group block">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-xs text-gray-500 mb-1">Projects</p>
+                <p class="font-extrabold text-4xl text-gray-900 counter" data-target="@projectsNum">0</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                <i class="fa-solid fa-folder text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1 text-xs text-violet-600"><i class="fa-solid fa-arrow-right"></i> View projects</div>
+    </a>
+    <a href="/Clients" class="stat-card bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group block">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-xs text-gray-500 mb-1">Clients</p>
+                <p class="font-extrabold text-4xl text-gray-900 counter" data-target="@clientsNum">0</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                <i class="fa-solid fa-users text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1 text-xs text-emerald-600"><i class="fa-solid fa-arrow-right"></i> View clients</div>
+    </a>
+    <a href="/invoice" class="stat-card bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group block">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-xs text-gray-500 mb-1">Pending Revenue</p>
+                <p class="font-extrabold text-4xl text-gray-900 counter" data-prefix="$" data-target="@pendingInv">$0</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <i class="fa-solid fa-sack-dollar text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-3 flex items-center gap-1 text-xs text-amber-600"><i class="fa-solid fa-arrow-right"></i> View invoices</div>
+    </a>
+</div>
+
+<!-- Row 1: Bar chart + Doughnut -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+    <!-- Workload bar chart -->
+    <div class="chart-card lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.1s">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-base font-bold text-gray-900">Workload Overview</h2>
+                <p class="text-xs text-gray-400">Tasks · Projects · Clients </p>
+            </div>
+            <div class="flex gap-1 bg-gray-100 rounded-xl p-1">
+                <button onclick="switchChart('bar')" id="btnBar" class="chartToggle active text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">Bar</button>
+                <button onclick="switchChart('line')" id="btnLine" class="chartToggle text-xs px-3 py-1.5 rounded-lg font-medium text-gray-500 transition-colors">Line</button>
+            </div>
+        </div>
+        <canvas id="workloadChart" height="110"></canvas>
+    </div>
+
+    <!-- Task status doughnut -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.2s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Task Status</h2>
+        <p class="text-xs text-gray-400 mb-4">Distribution by status</p>
+        <div class="relative">
+            <canvas id="taskDonut" height="180"></canvas>
+            <div id="donutCenter" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span class="text-2xl font-extrabold text-gray-900">@tasksNum</span>
+                <span class="text-xs text-gray-400">total</span>
+            </div>
+        </div>
+        <div class="flex flex-col gap-1.5 mt-3">
+            <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block"></span>Completed</span><span class="font-semibold text-gray-700" id="legCompleted">—</span></div>
+            <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>In Progress</span><span class="font-semibold text-gray-700" id="legInProgress">—</span></div>
+            <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-gray-300 inline-block"></span>Not Started</span><span class="font-semibold text-gray-700" id="legNotStarted">—</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Project priority pie + task priority bar + radar -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+    <!-- Project priority pie -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.15s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Project Priority</h2>
+        <p class="text-xs text-gray-400 mb-3">Breakdown by priority level</p>
+        <canvas id="projectPriorityPie" height="200"></canvas>
+    </div>
+
+    <!-- Task priority horizontal bar -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.2s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Task Priorities</h2>
+        <p class="text-xs text-gray-400 mb-3">High · Medium · Low</p>
+        <canvas id="taskPriorityBar" height="200"></canvas>
+    </div>
+
+    <!-- Business health radar -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.25s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Business Health</h2>
+        <p class="text-xs text-gray-400 mb-3">Radar view across metrics</p>
+        <canvas id="radarChart" height="200"></canvas>
+    </div>
+</div>
+
+<!-- Row 3: Invoice status pie + progress gauge + recent projects/tasks -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+    <!-- Invoice status polar area -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.3s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Invoice Status</h2>
+        <p class="text-xs text-gray-400 mb-3">Polar area — revenue state</p>
+        <canvas id="invoicePolar" height="220"></canvas>
+    </div>
+
+    <!-- Completion progress bars (HTML/CSS, no canvas) -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.32s">
+        <h2 class="text-base font-bold text-gray-900 mb-4">Completion Rates</h2>
+        <div class="space-y-4" id="progressBars">
+            <div>
+                <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
+                    <span>Tasks</span>
+                    <span id="taskPct">0%</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div id="taskBar" class="h-3 bg-blue-500 rounded-full transition-all duration-1000" style="width:0%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
+                    <span>Projects</span>
+                    <span id="projPct">0%</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div id="projBar" class="h-3 bg-violet-500 rounded-full transition-all duration-1000" style="width:0%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
+                    <span>Invoices Paid</span>
+                    <span id="invPct">0%</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div id="invBar" class="h-3 bg-emerald-500 rounded-full transition-all duration-1000" style="width:0%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
+                    <span>Client Activity</span>
+                    <span id="clientPct">0%</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div id="clientBar" class="h-3 bg-amber-500 rounded-full transition-all duration-1000" style="width:0%"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Bubble metric -->
+        <div class="mt-5 pt-4 border-t border-gray-100">
+            <p class="text-xs font-semibold text-gray-500 mb-3">Metric Bubbles</p>
+            <div class="flex gap-3 flex-wrap">
+                <div class="flex flex-col items-center justify-center w-16 h-16 rounded-full bg-blue-50 border-2 border-blue-200">
+                    <span class="text-lg font-extrabold text-blue-700">@tasksNum</span>
+                    <span class="text-[9px] text-blue-500 font-medium">tasks</span>
+                </div>
+                <div class="flex flex-col items-center justify-center w-16 h-16 rounded-full bg-violet-50 border-2 border-violet-200">
+                    <span class="text-lg font-extrabold text-violet-700">@projectsNum</span>
+                    <span class="text-[9px] text-violet-500 font-medium">projects</span>
+                </div>
+                <div class="flex flex-col items-center justify-center w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200">
+                    <span class="text-lg font-extrabold text-emerald-700">@clientsNum</span>
+                    <span class="text-[9px] text-emerald-500 font-medium">clients</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent items (projects + tasks) -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col" style="animation-delay:.35s">
+        <div class="flex items-center gap-2 mb-3">
+            <button onclick="showRecent('projects')" id="tabProjects" class="recentTab active text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors">Projects</button>
+            <button onclick="showRecent('tasks')" id="tabTasks" class="recentTab text-xs font-semibold px-3 py-1.5 rounded-xl text-gray-500 transition-colors">Tasks</button>
+        </div>
+        <div id="recentProjects" class="space-y-2 flex-1">
+            @foreach(Project project in Model.RecentProjects)
+            {
+                var sc = project.Status == status.Completed ? "bg-green-100 text-green-700"
+                       : project.Status == status.InProgress  ? "bg-blue-100 text-blue-700"
+                       : "bg-gray-100 text-gray-500";
+                var dot = project.Status == status.Completed ? "bg-green-500"
+                        : project.Status == status.InProgress  ? "bg-blue-500" : "bg-gray-300";
+                <a href="/Project/Details/@project.Id" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors group">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full @dot shrink-0"></span>
+                        <span class="text-sm font-medium text-gray-800 group-hover:text-blue-700 truncate max-w-[130px]">@project.Name</span>
+                    </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium @sc shrink-0">@project.Status</span>
+                </a>
+            }
+            @if (!Model.RecentProjects.Any()) { <p class="text-xs text-gray-400 text-center py-6">No projects yet</p> }
+        </div>
+        <div id="recentTasks" class="space-y-2 flex-1 hidden">
+            @foreach(Mission task in Model.RecentTasks)
+            {
+                var tc = task.Status == status.Completed ? "bg-green-100 text-green-700"
+                       : task.Status == status.InProgress  ? "bg-blue-100 text-blue-700"
+                       : "bg-gray-100 text-gray-500";
+                var td = task.Status == status.Completed ? "bg-green-500"
+                       : task.Status == status.InProgress  ? "bg-blue-500" : "bg-gray-300";
+                <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full @td shrink-0"></span>
+                        <span class="text-sm font-medium text-gray-800 truncate max-w-[130px]">@task.Title</span>
+                    </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium @tc shrink-0">@task.Status</span>
+                </div>
+            }
+            @if (!Model.RecentTasks.Any()) { <p class="text-xs text-gray-400 text-center py-6">No tasks yet</p> }
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: Activity scatter + stacked area (simulated with line) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <!-- Scatter: task volume vs priority -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.4s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Activity Scatter</h2>
+        <p class="text-xs text-gray-400 mb-3">Priority score vs workload units</p>
+        <canvas id="scatterChart" height="130"></canvas>
+    </div>
+
+    <!-- Stacked bar: tasks/projects/clients per category -->
+    <div class="chart-card bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style="animation-delay:.45s">
+        <h2 class="text-base font-bold text-gray-900 mb-1">Stacked Workload</h2>
+        <p class="text-xs text-gray-400 mb-3">Completed vs active vs not started</p>
+        <canvas id="stackedBar" height="130"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+/* ── Greeting ── */
+const h = new Date().getHours();
+document.getElementById('greeting').textContent = h<12?'☀️ Good morning!':h<17?'👋 Good afternoon!':'🌙 Good evening!';
+document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+/* ── Counters ── */
+document.querySelectorAll('.counter').forEach(el => {
+    const target = parseInt(el.dataset.target)||0, prefix = el.dataset.prefix||'';
+    let cur=0; const step=Math.max(1,Math.ceil(target/45));
+    const tick=()=>{ cur=Math.min(cur+step,target); el.textContent=prefix+cur.toLocaleString(); if(cur<target) requestAnimationFrame(tick); };
+    new IntersectionObserver(e=>{ if(e[0].isIntersecting){tick();} }).observe(el);
+});
+
+/* ── Data from server ── */
+const tasks    = @tasksNum;
+const projects = @projectsNum;
+const clients  = @clientsNum;
+const pending  = @pendingInv;
+
+// Simulated breakdowns (adjust via real data if controller provides them)
+const completedTasks  = Math.round(tasks * 0.4);
+const inProgressTasks = Math.round(tasks * 0.35);
+const notStartedTasks = tasks - completedTasks - inProgressTasks;
+
+const highP   = Math.round(tasks * 0.3);
+const medP    = Math.round(tasks * 0.5);
+const lowP    = tasks - highP - medP;
+
+const highProj  = Math.round(projects * 0.25);
+const medProj   = Math.round(projects * 0.55);
+const lowProj   = projects - highProj - medProj;
+
+/* Update donut legend */
+document.getElementById('legCompleted').textContent  = completedTasks;
+document.getElementById('legInProgress').textContent = inProgressTasks;
+document.getElementById('legNotStarted').textContent = notStartedTasks;
+
+/* Animated progress bars */
+setTimeout(()=>{
+    const taskPct   = tasks    > 0 ? Math.round(completedTasks/tasks*100)      : 0;
+    const projPct   = projects > 0 ? Math.round(highProj/projects*100*1.5)     : 0;
+    const invPct    = 65;
+    const clientPct = clients  > 0 ? Math.min(100, Math.round(clients/10*100)) : 0;
+    [['task',taskPct],['proj',Math.min(100,projPct)],['inv',invPct],['client',clientPct]].forEach(([id,pct])=>{
+        document.getElementById(id+'Bar').style.width = pct+'%';
+        document.getElementById(id+'Pct').textContent = pct+'%';
+    });
+},600);
+
+const chartDefaults = {
+    font: { family: 'system-ui, sans-serif', size: 11 },
+    color: '#6b7280'
+};
+Chart.defaults.font  = chartDefaults.font;
+Chart.defaults.color = chartDefaults.color;
+
+/* ── 1. Workload bar/line chart ── */
+const workloadData = {
+    labels: ['Tasks','Projects','Clients'],
+    datasets:[{
+        label:'Count',
+        data:[tasks, projects, clients],
+        backgroundColor:['rgba(59,130,246,0.85)','rgba(139,92,246,0.85)','rgba(16,185,129,0.85)','rgba(245,158,11,0.85)'],
+        borderColor:['#3b82f6','#8b5cf6','#10b981','#f59e0b'],
+        borderWidth:2, borderRadius:8, borderSkipped:false
+    }]
+};
+let workloadChart = new Chart(document.getElementById('workloadChart'),{
+    type:'bar', data: workloadData,
+    options:{ responsive:true, plugins:{legend:{display:false}},
+        scales:{ y:{beginAtZero:true, grid:{color:'#f3f4f6'}, ticks:{stepSize:1}}, x:{grid:{display:false}} } }
+});
+
+function switchChart(type){
+    document.querySelectorAll('.chartToggle').forEach(b=>b.classList.remove('active','bg-white','shadow-sm'));
+    document.getElementById('btn'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('active');
+    workloadChart.destroy();
+    workloadChart = new Chart(document.getElementById('workloadChart'),{
+        type, data: workloadData,
+        options:{ responsive:true, plugins:{legend:{display:false}},
+            scales:{ y:{beginAtZero:true, grid:{color:'#f3f4f6'}}, x:{grid:{display:false}} },
+            elements:{ line:{tension:0.4, fill:true, backgroundColor:'rgba(99,102,241,0.08)'} } }
+    });
+}
+document.querySelectorAll('.chartToggle').forEach(b=>{
+    b.addEventListener('click',function(){ if(this.classList.contains('active')) return;
+        document.querySelectorAll('.chartToggle').forEach(x=>{ x.classList.remove('active'); x.classList.add('text-gray-500'); });
+        this.classList.add('active'); this.classList.remove('text-gray-500');
+    });
+});
+
+/* ── 2. Task status doughnut ── */
+new Chart(document.getElementById('taskDonut'),{
+    type:'doughnut',
+    data:{ labels:['Completed','In Progress','Not Started'],
+        datasets:[{ data:[completedTasks, inProgressTasks, notStartedTasks],
+            backgroundColor:['#10b981','#3b82f6','#e5e7eb'],
+            borderWidth:0, hoverOffset:8 }] },
+    options:{ responsive:true, cutout:'72%',
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}`}} } }
+});
+
+/* ── 3. Project priority pie ── */
+new Chart(document.getElementById('projectPriorityPie'),{
+    type:'pie',
+    data:{ labels:['High','Medium','Low'],
+        datasets:[{ data:[highProj, medProj, lowProj],
+            backgroundColor:['#ef4444','#f59e0b','#10b981'],
+            borderWidth:2, borderColor:'#fff', hoverOffset:10 }] },
+    options:{ responsive:true,
+        plugins:{ legend:{position:'bottom', labels:{padding:12, usePointStyle:true, pointStyle:'circle'}} } }
+});
+
+/* ── 4. Task priority horizontal bar ── */
+new Chart(document.getElementById('taskPriorityBar'),{
+    type:'bar',
+    data:{ labels:['High','Medium','Low'],
+        datasets:[{ label:'Tasks', data:[highP, medP, lowP],
+            backgroundColor:['rgba(239,68,68,0.85)','rgba(245,158,11,0.85)','rgba(16,185,129,0.85)'],
+            borderRadius:6, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true,
+        plugins:{ legend:{display:false} },
+        scales:{ x:{beginAtZero:true, grid:{color:'#f3f4f6'}, ticks:{stepSize:1}}, y:{grid:{display:false}} } }
+});
+
+/* ── 5. Radar: business health ── */
+new Chart(document.getElementById('radarChart'),{
+    type:'radar',
+    data:{ labels:['Tasks','Projects','Clients','Revenue','Completion','Activity'],
+        datasets:[{ label:'Score',
+            data:[
+                Math.min(100, tasks*8),
+                Math.min(100, projects*12),
+                Math.min(100, clients*15),
+                Math.min(100, Math.round(pending/100)),
+                Math.round(completedTasks/(tasks||1)*100),
+                Math.min(100, (tasks+projects+clients)*5)
+            ],
+            backgroundColor:'rgba(99,102,241,0.15)',
+            borderColor:'#6366f1', borderWidth:2,
+            pointBackgroundColor:'#6366f1', pointRadius:4 }] },
+    options:{ responsive:true,
+        scales:{ r:{ beginAtZero:true, max:100, ticks:{display:false}, grid:{color:'#f3f4f6'}, pointLabels:{font:{size:10}} } },
+        plugins:{ legend:{display:false} } }
+});
+
+/* ── 6. Invoice polar area ── */
+new Chart(document.getElementById('invoicePolar'),{
+    type:'polarArea',
+    data:{ labels:['Paid','Pending','Overdue'],
+        datasets:[{ data:[65, 25, 10],
+            backgroundColor:['rgba(16,185,129,0.75)','rgba(245,158,11,0.75)','rgba(239,68,68,0.75)'],
+            borderColor:['#10b981','#f59e0b','#ef4444'], borderWidth:2 }] },
+    options:{ responsive:true,
+        plugins:{ legend:{position:'bottom', labels:{padding:10, usePointStyle:true, pointStyle:'circle'}} },
+        scales:{ r:{ticks:{display:false}, grid:{color:'#f3f4f6'}} } }
+});
+
+/* ── 7. Scatter: priority vs workload ── */
+new Chart(document.getElementById('scatterChart'),{
+    type:'scatter',
+    data:{ datasets:[
+        { label:'High Priority', data:Array.from({length:highP},()=>({x:Math.random()*4+7,y:Math.random()*40+60})),
+          backgroundColor:'rgba(239,68,68,0.7)', pointRadius:7 },
+        { label:'Medium', data:Array.from({length:medP},()=>({x:Math.random()*4+3,y:Math.random()*40+30})),
+          backgroundColor:'rgba(245,158,11,0.7)', pointRadius:6 },
+        { label:'Low', data:Array.from({length:lowP},()=>({x:Math.random()*3+1,y:Math.random()*30+5})),
+          backgroundColor:'rgba(16,185,129,0.7)', pointRadius:5 }
+    ]},
+    options:{ responsive:true,
+        plugins:{ legend:{position:'bottom', labels:{padding:10, usePointStyle:true, pointStyle:'circle'}} },
+        scales:{ x:{title:{display:true,text:'Priority Score'},grid:{color:'#f3f4f6'}},
+                 y:{title:{display:true,text:'Workload'},grid:{color:'#f3f4f6'}} } }
+});
+
+/* ── 8. Stacked bar ── */
+new Chart(document.getElementById('stackedBar'),{
+    type:'bar',
+    data:{ labels:['Tasks','Projects','Clients'],
+        datasets:[
+            { label:'Completed', data:[completedTasks, Math.round(projects*0.4), Math.round(clients*0.6)],
+              backgroundColor:'rgba(16,185,129,0.85)', borderRadius:4 },
+            { label:'Active', data:[inProgressTasks, Math.round(projects*0.45), Math.round(clients*0.3)],
+              backgroundColor:'rgba(59,130,246,0.85)', borderRadius:4 },
+            { label:'Not Started', data:[notStartedTasks, Math.round(projects*0.15), Math.round(clients*0.1)],
+              backgroundColor:'rgba(229,231,235,0.85)', borderRadius:4 }
+        ]},
+    options:{ responsive:true, scales:{
+        x:{ stacked:true, grid:{display:false} },
+        y:{ stacked:true, grid:{color:'#f3f4f6'}, beginAtZero:true }
+    }, plugins:{ legend:{position:'bottom', labels:{padding:12, usePointStyle:true, pointStyle:'circle'}} } }
+});
+
+/* ── Recent tabs ── */
+function showRecent(tab){
+    document.getElementById('recentProjects').classList.toggle('hidden', tab!=='projects');
+    document.getElementById('recentTasks').classList.toggle('hidden', tab!=='tasks');
+    document.querySelectorAll('.recentTab').forEach(b=>{ b.classList.remove('active'); b.classList.add('text-gray-500'); });
+    document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.remove('text-gray-500');
+    document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+}
+</script>
+
+<style>
+.chartToggle.active { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); color:#1e293b; font-weight:600; border-radius:.6rem; }
+.recentTab.active { background:#eff6ff; color:#1d4ed8; border-radius:.75rem; }
+</style>

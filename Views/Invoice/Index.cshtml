@@ -1,0 +1,245 @@
+@using FreelanceManager.Enums
+@model List<AllInvoicesVM>
+@{
+    ViewData["Title"] = "Invoices";
+    decimal totalPaid    = Model.Where(i => i.Status.ToString() == "Paid").Sum(i => i.Amount);
+    decimal totalPending = Model.Where(i => i.Status.ToString() == "Pending").Sum(i => i.Amount);
+    decimal totalOverdue = Model.Where(i => i.Status.ToString() == "Overdue").Sum(i => i.Amount);
+}
+
+<style>
+@@keyframes rowIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+.inv-row { animation: rowIn 0.3s ease both; }
+.pill.active { background:#1e293b; color:#fff; border-color:#1e293b; }
+</style>
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Invoices</h1>
+        <p class="text-gray-500 text-sm mt-1"><span id="invCount">@Model.Count</span> invoices total</p>
+    </div>
+    <a href="/invoice/create"
+       class="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shrink-0">
+        <i class="fa-solid fa-plus"></i> New Invoice
+    </a>
+</div>
+
+<!-- Summary cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-circle-check text-green-600 text-xl"></i>
+        </div>
+        <div>
+            <p class="text-xs text-gray-400 font-medium">Total Paid</p>
+            <p class="text-2xl font-extrabold text-green-600 counter" data-target="@((int)totalPaid)" data-prefix="$">$0</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-clock text-amber-600 text-xl"></i>
+        </div>
+        <div>
+            <p class="text-xs text-gray-400 font-medium">Pending</p>
+            <p class="text-2xl font-extrabold text-amber-600 counter" data-target="@((int)totalPending)" data-prefix="$">$0</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+        </div>
+        <div>
+            <p class="text-xs text-gray-400 font-medium">Overdue</p>
+            <p class="text-2xl font-extrabold text-red-600 counter" data-target="@((int)totalOverdue)" data-prefix="$">$0</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
+    <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input id="invSearch" type="text" placeholder="Search by name or client..."
+                   class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"/>
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3 items-center">
+        <span class="text-xs text-gray-400 mr-1">Status:</span>
+        <button class="pill active text-xs px-3 py-1.5 rounded-full border border-gray-200 font-medium transition-all" data-val="">All</button>
+        <button class="pill text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-val="Paid">
+            <span class="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span>Paid
+        </button>
+        <button class="pill text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-val="Pending">
+            <span class="w-2 h-2 rounded-full bg-amber-400 inline-block mr-1"></span>Pending
+        </button>
+        <button class="pill text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 font-medium transition-all" data-val="Overdue">
+            <span class="w-2 h-2 rounded-full bg-red-500 inline-block mr-1"></span>Overdue
+        </button>
+    </div>
+</div>
+
+<!-- Empty state -->
+<div id="emptyInv" class="hidden text-center py-16 bg-white rounded-2xl border border-gray-100">
+    <i class="fa-solid fa-file-invoice text-4xl text-gray-200 mb-3"></i>
+    <p class="text-gray-500 font-medium">No invoices match your search</p>
+    <button onclick="clearInvFilters()" class="mt-3 text-blue-600 text-sm hover:underline">Clear filters</button>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+        <div class="col-span-3">Name</div>
+        <div class="col-span-3">Client</div>
+        <div class="col-span-2">Amount</div>
+        <div class="col-span-2">Status</div>
+        <div class="col-span-1">Due Date</div>
+        <div class="col-span-1 text-right">Actions</div>
+    </div>
+
+    <div id="invTable">
+        @foreach (var invoice in Model)
+        {
+            var isPaid    = invoice.Status.ToString() == "Paid";
+            var isOverdue = invoice.Status.ToString() == "Overdue";
+            var statusCls = isPaid    ? "bg-green-100 text-green-700"
+                          : isOverdue ? "bg-red-100 text-red-700"
+                          : "bg-amber-100 text-amber-700";
+
+            <div class="inv-row grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors items-center"
+                 data-name="@invoice.Name?.ToLower()"
+                 data-client="@invoice.ClientName?.ToLower()"
+                 data-status="@invoice.Status">
+
+                <div class="col-span-3">
+                    <a href="/invoice/Details/@invoice.Id" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline text-sm">
+                        @invoice.Name
+                    </a>
+                </div>
+                <div class="col-span-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                            @(invoice.ClientName?.FirstOrDefault())
+                        </div>
+                        <span class="text-sm font-medium text-gray-800 truncate">@invoice.ClientName</span>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <span class="text-sm font-bold text-gray-900">$@invoice.Amount.ToString("N2")</span>
+                </div>
+                <div class="col-span-2">
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full @statusCls">@invoice.Status</span>
+                </div>
+                <div class="hidden sm:flex sm:col-span-1 items-center gap-1 text-xs @(isOverdue ? "text-red-500 font-semibold" : "text-gray-500")">
+                    @invoice.DueDate.ToString("dd MMM yy")
+                </div>
+                <div class="col-span-2 sm:col-span-1 flex justify-end gap-1.5">
+                    <a href="/invoice/Details/@invoice.Id"
+                       class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors">
+                        <i class="fa-regular fa-eye text-xs"></i>
+                    </a>
+                    <button onclick="openInvDeleteModal(@invoice.Id, '@invoice.Name')"
+                            class="w-7 h-7 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-12">
+            <i class="fa-solid fa-file-invoice text-4xl text-gray-200 mb-3"></i>
+            <p class="text-gray-400 text-sm">No invoices yet.</p>
+            <a href="/invoice/create" class="mt-3 inline-block text-blue-600 text-sm hover:underline">Create your first invoice</a>
+        </div>
+    }
+</div>
+
+<!-- Delete modal -->
+<div id="invDeleteModal" class="fixed inset-0 z-50 bg-black/50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xs w-full mx-4 overflow-hidden">
+        <div class="bg-red-50 px-6 py-4 border-b border-red-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-file-invoice text-red-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900">Delete Invoice</h3>
+                    <p class="text-xs text-gray-500" id="invDeleteName"></p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4">
+            <p class="text-sm text-gray-600">This will permanently remove the invoice. <strong class="text-gray-900">Cannot be undone.</strong></p>
+        </div>
+        <div class="px-6 pb-5 flex gap-3">
+            <button onclick="closeInvDeleteModal()" class="flex-1 border border-gray-200 text-gray-700 hover:bg-gray-50 py-2.5 rounded-xl font-medium text-sm transition-colors">Cancel</button>
+            <form id="invDeleteForm" method="post">
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition-colors">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let invStatus = '', invSearch = '';
+
+document.querySelectorAll('.counter').forEach(el => {
+    const target = parseInt(el.dataset.target)||0, prefix = el.dataset.prefix||'';
+    let cur = 0; const step = Math.max(1, Math.ceil(target/40));
+    const tick = () => { cur = Math.min(cur+step,target); el.textContent=prefix+cur.toLocaleString(); if(cur<target) requestAnimationFrame(tick); };
+    const obs = new IntersectionObserver(e=>{ if(e[0].isIntersecting){tick();obs.disconnect();} });
+    obs.observe(el);
+});
+
+let dt;
+document.getElementById('invSearch').addEventListener('input', function(){
+    clearTimeout(dt);
+    dt = setTimeout(()=>{ invSearch = this.value.toLowerCase(); applyInvFilters(); }, 180);
+});
+
+document.querySelectorAll('.pill').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        invStatus = this.dataset.val;
+        applyInvFilters();
+    });
+});
+
+function applyInvFilters(){
+    const rows = document.querySelectorAll('.inv-row');
+    let vis = 0;
+    rows.forEach(r=>{
+        const mn = !invSearch  || (r.dataset.name||'').includes(invSearch) || (r.dataset.client||'').includes(invSearch);
+        const ms = !invStatus  || r.dataset.status === invStatus;
+        const show = mn && ms;
+        r.style.display = show ? '' : 'none';
+        if(show) vis++;
+    });
+    document.getElementById('invCount').textContent = vis;
+    document.getElementById('emptyInv').classList.toggle('hidden', vis > 0);
+}
+
+function clearInvFilters(){
+    document.getElementById('invSearch').value=''; invSearch=''; invStatus='';
+    document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.pill[data-val=""]').classList.add('active');
+    applyInvFilters();
+}
+
+function openInvDeleteModal(id, name){
+    document.getElementById('invDeleteName').textContent = name;
+    document.getElementById('invDeleteForm').action = '/invoice/Delete/'+id;
+    const m = document.getElementById('invDeleteModal');
+    m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeInvDeleteModal(){
+    const m = document.getElementById('invDeleteModal');
+    m.classList.add('hidden'); m.classList.remove('flex');
+}
+document.getElementById('invDeleteModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeInvDeleteModal(); });
+</script>

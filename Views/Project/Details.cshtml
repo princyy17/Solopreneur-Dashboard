@@ -1,0 +1,145 @@
+﻿
+@model ProjectDetialsVM
+@{
+    ViewData["Title"] = "Details";
+}
+
+
+<link rel="stylesheet" href="/css/Project/ProductDetails.css" />
+<div class="my-3">
+    <h2>@Model.Name</h2> <!---->
+</div>
+<div class="my-3">
+    <p>@Model.Description</p> <!---->
+</div>
+
+
+
+<div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    <div class="rounded-lg border bg-card text-card-foreground shadow hover:shadow-lg duration-500 ease-in-out ">
+        <div class="p-4 flex items-center gap-x-2 ">
+            <span>
+                <i class="fa-solid fa-sack-dollar"></i>
+             </span>
+            <h5 class="tracking-tight text-lg font-medium">
+                Budget
+            </h5>
+        </div>
+        <div class="p-6 pt-0 flex justify-center">
+            <h2 class="text-xl font-bold">
+                <span class="text-green-500">$</span>
+                @Model.Budget</h2><!---->
+        </div>
+    </div>
+
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="p-4 flex items-center gap-x-2">
+            <span>
+                <i class="fa-solid fa-clock"></i>
+            </span>
+            <h5 class="tracking-tight text-lg font-medium">
+                Time Tracked
+            </h5>
+        </div>
+        <div class="p-6 pt-0 flex items-center flex-col items-center">
+            <h2 class="text-xl font-bold">0.0h</h2> <!---->
+            <h3 class="text-xl font-bold">
+                $0 billed <!---->
+            </h3>
+        </div>
+    </div>
+
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="p-4 flex gap-x-2">
+            <span>
+                <i class="fa-solid fa-list-check"></i>
+            </span>
+            <h5 class="tracking-tight text-lg font-medium">
+                Tasks Progress
+            </h5>
+        </div>
+        <div class="p-6 pt-0">
+            <div class="flex items-center gap-2">
+                <h3 class="text-gray-500">@Model.CompletedMissionsCount/@Model.AllMissionsCount </h3> <!---->
+                <h6>@Model.Status</h6> <!---->
+            </div>
+            <div class="w-full bg-gray-200 rounded-lg h-2 overflow-hidden my-2">
+                <div class="bg-black h-full rounded-lg transition-all duration-300"
+                     style="width: calc((@Model.CompletedMissionsCount / @Model.AllMissionsCount) * 100%)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="bg-slate-200 p-2 my-6 rounded-lg">
+    <div class="grid gap-x-2 grid-cols-2 px-2">
+        <button id="overviewbutton" data-target="ProjectOverView" class="tab-button py-1 rounded-lg active">
+            <span><i class="fa-solid fa-layer-group"></i></span>
+            OverView</button>
+        <button id="taskButton" data-target="TaskSection" class="tab-button py-1 rounded-lg">
+            <span><i class="fa-solid fa-list-check"></i></span>
+            Tasks</button>
+    </div>   
+</div>
+
+
+
+
+<section id="ProjectOverView" class="tab-section border rounded-lg p-4">
+    <div class="my-2">
+        <h2 class="text-lg font-bold">Project Details</h2>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2">
+        <div class="flex flex-col ">
+            <h2 class="text-gray-500 font-bold text-lg">Client</h2>
+            <h5 class="font-bold  text-base">@Model.ClientName</h5><!---->
+        </div>
+        <div class="flex flex-col">
+            <h6 class="text-gray-500 font-bold text-lg">
+                Category
+             </h6>
+            <h5 class="font-bold  text-base">@Model.Categoty</h5> <!---->
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2">
+        <div class="flex flex-col">
+            <h6 class="text-gray-500 font-bold text-lg">Start Date</h6>
+            <h5 class="font-bold  text-base">
+                @Model.StartDate.ToShortDateString()
+            </h5>
+        </div>
+        <div class="flex flex-col">
+            <h6 class="text-gray-500 font-bold text-lg">
+                End Date
+            </h6>
+            <h5 class="font-bold  text-base">@Model.EndDate.ToShortDateString()</h5>
+        </div>
+    </div>
+</section>
+
+<div id="TaskSection" class="tab-section hidden">
+    <h3>Tasks</h3>
+</div>
+
+
+
+<script>
+    let tabbuttons = $(".tab-button");
+    let tabsections = $(".tab-section");
+
+    tabbuttons.click(function () {
+        let section = $(this).data("target");
+
+        tabbuttons.removeClass("active");
+        $(this).addClass("active");
+
+        tabsections.addClass("hidden");
+        $(`#${section}`).removeClass("hidden");
+
+    })
+
+</script>

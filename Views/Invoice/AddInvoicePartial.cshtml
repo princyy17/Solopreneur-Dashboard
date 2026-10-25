@@ -1,0 +1,110 @@
+﻿@model AddInvoiceVM
+
+<style>
+    @@keyframes modalEntrance {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-modal {
+        animation: modalEntrance 0.3s ease-out;
+    }
+</style>
+
+@{
+    SelectList deptOption = new SelectList(ViewBag.Projects, "Id", "Name");
+}
+
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4 sm:p-6">
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-lg sm:max-w-xl md:max-w-2xl animate-modal">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg sm:text-xl font-bold">Add Invoice</h2>
+            <button id="closeModal" class="text-red-500 hover:text-black font-bold text-xl">×</button>
+        </div>
+        <form asp-action="SaveNew" asp-controller="Invoice" method="post" novalidate class="space-y-4">
+            <div>
+                <label asp-for="Name" class="block font-medium mb-1">Title</label>
+                <input asp-for="Name" class="w-full border border-gray-300 rounded-md px-3 py-2" />
+                <span asp-validation-for="Name" class="text-red-500 text-sm"></span>
+            </div>
+
+            @* <div> *@
+            @*     <label asp-for="Description" class="block font-medium mb-1"></label> *@
+            @*     <input asp-for="Description" class="w-full border border-gray-300 rounded-md px-3 py-2" /> *@
+            @*     <span asp-validation-for="Description" class="text-red-500 text-sm"></span> *@
+            @* </div> *@
+
+            <div>
+                <label asp-for="Hours" class="block font-medium mb-1"></label>
+                <input asp-for="Hours" class="w-full border border-gray-300 rounded-md px-3 py-2" />
+                <span asp-validation-for="Hours" class="text-red-500 text-sm"></span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label asp-for="CurrencyName" class="block font-medium mb-1">Currency</label>
+                    <select asp-for="CurrencyName" asp-items="ViewBag.CurrencyList" class="w-full border border-gray-300 rounded-md px-3 py-2">
+
+                    </select>
+                    <span asp-validation-for="CurrencyName" class="text-red-500 text-sm"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Status" class="block font-medium mb-1"></label>
+                    <select asp-for="Status" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                    <span asp-validation-for="Status" class="text-red-500 text-sm"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label asp-for="InvoiceDate" class="block font-medium mb-1">Invoice Date</label>
+                    <input asp-for="InvoiceDate" type="date" class="w-full border border-gray-300 rounded-md px-3 py-2" />
+                    <span asp-validation-for="InvoiceDate" class="text-red-500 text-sm"></span>
+                </div>
+                <div>
+                    <label asp-for="DueDate" class="block font-medium mb-1">Due Date</label>
+                    <input asp-for="DueDate" type="date" class="w-full border border-gray-300 rounded-md px-3 py-2" />
+                    <span asp-validation-for="DueDate" class="text-red-500 text-sm"></span>
+                </div>
+            </div>
+
+            <div>
+                <label asp-for="ProjectId" class="block font-medium mb-1">Project Name</label>
+                <select asp-for="ProjectId" asp-items="deptOption" class="w-full border border-gray-300 rounded-md px-3 py-2">
+
+                </select>
+                <span asp-validation-for="ProjectId" class="text-red-500 text-sm"></span>
+            </div>
+
+            <div>
+                <label asp-for="Notes" class="block font-medium mb-1"></label>
+                <textarea asp-for="Notes" class="w-full border border-gray-300 rounded-md px-3 py-2"></textarea>
+                <span asp-validation-for="Notes" class="text-red-500 text-sm"></span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-end gap-2 pt-4">
+                <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded w-full sm:w-auto" id="closeModal">Cancel</button>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded w-full sm:w-auto"> Create Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+}

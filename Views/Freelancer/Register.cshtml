@@ -1,0 +1,89 @@
+﻿
+@model FreelanceManager.ViewModels.Account.FreelancerRegisterVM
+@{
+    ViewData["Title"] = "Register";
+
+}
+<style>
+    main {
+        padding: 0 !important;
+    }
+</style>
+<partial name="_ClientSideValidation" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white h-screen w-screen overflow-hidden">
+
+    <div class="flex h-full">
+        <!-- Right Side (Image) -->
+        <div class="hidden lg:block w-1/2 h-full">
+            <img src="/Image/CoverLogin.png" alt="Login Visual" class="w-full h-full object-cover" />
+        </div>
+        <!-- Left Side (Form) -->
+        <div class="w-full max-w-md mx-auto flex flex-col justify-center px-8">
+            <div class="flex justify-center mb-4">
+                <img src="/Image/Do Flow.png"
+                     class="h-10 w-10 object-contain"
+                     alt="Logo" />
+            </div>
+            <h2 class="mb-5 text-2xl font-semibold text-center text-gray-900">Register</h2>
+
+            <form asp-action="Register" asp-controller="Freelancer">
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700">User Name</label>
+                    <input asp-for="UserName" type="text" class="w-full p-2 mt-1 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <span asp-validation-for="UserName" class="text-sm text-red-500"></span>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700">Email address</label>
+                    <input asp-for="Email" type="email" class="w-full p-2 mt-1 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <span asp-validation-for="Email" class="text-sm text-red-500"></span>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input asp-for="Password" type="password" class="w-full p-2 mt-1 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <span asp-validation-for="Password" class="text-sm text-red-500"></span>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700">ConfirmPassword</label>
+                    <input asp-for="ConfirmPassword" type="password" class="w-full p-2 mt-1 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <span asp-validation-for="ConfirmPassword" class="text-sm text-red-500"></span>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700">PhoneNumber</label>
+                    <input asp-for="PhoneNumber" type="text" class="w-full p-2 mt-1 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <span asp-validation-for="PhoneNumber" class="text-sm text-red-500"></span>
+                </div>
+                <button type="submit" value="Sign Up" class="w-full p-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Sign Up</button>
+            </form>
+            <div class="flex items-center my-4">
+                <div class="w-full border-b border-gray-300"></div>
+                <span class="px-2 text-gray-400">Or</span>
+                <div class="w-full border-b border-gray-300"></div>
+            </div>
+            <div class="flex gap-4">
+                <button class="flex items-center justify-center w-1/2 p-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+                    <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5">
+                    <span class="ml-2 text-sm font-medium">Google</span>
+                </button>
+                <button class="flex items-center justify-center w-1/2 p-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+                    <img src="https://www.svgrepo.com/show/349375/github.svg" alt="GitHub" class="w-5 h-5">
+                    <span class="ml-2 text-sm font-medium">GitHub</span>
+                </button>
+            </div>
+            <p class="text-center">
+                <a asp-action="Login" class="text-indigo-600 hover:underline">You Already Have Account!</a>
+            </p>
+        </div>
+
+
+    </div>
+
+</body>
+</html>

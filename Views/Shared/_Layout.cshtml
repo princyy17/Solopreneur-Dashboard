@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SoloPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+          integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Sidebar expand on hover */
+        #sidebar { transition: width 0.28s cubic-bezier(0.4,0,0.2,1); overflow: hidden; }
+        #sidebar:hover { width: 15rem; }
+        .nav-label {
+            opacity: 0; white-space: nowrap; max-width: 0;
+            transition: opacity 0.2s ease 0.05s, max-width 0.25s ease;
+            overflow: hidden; display: inline-block;
+        }
+        #sidebar:hover .nav-label { opacity: 1; max-width: 12rem; margin-left: 0.625rem; }
+
+        /* Toast slide-in */
+        @@keyframes toastIn  { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-8px); } }
+        .toast-enter { animation: toastIn 0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
+        .toast-exit  { animation: toastOut 0.4s ease forwards; }
+
+        /* Search overlay blur */
+        #searchOverlay { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+        /* Active nav glow */
+        .nav-active { background: #eff6ff; color: #1d4ed8; }
+        .nav-active img, .nav-active svg { filter: brightness(0) saturate(100%) invert(26%) sepia(98%) saturate(1516%) hue-rotate(211deg) brightness(96%) contrast(101%); }
+
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
+        /* Pulse for active badge */
+        @@keyframes pulse-badge { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+    </style>
+</head>
+
+@{
+    string? ctrl = ViewContext.RouteData.Values["Controller"]?.ToString();
+}
+
+<body class="antialiased">
+
+@if (TempData["SuccessMessage"] != null || TempData["ErrorMessage"] != null || TempData["InfoMessage"] != null)
+{
+    string type = TempData["SuccessMessage"] != null ? "success" :
+                  TempData["ErrorMessage"] != null ? "error" : "info";
+    var message = TempData["SuccessMessage"] ?? TempData["ErrorMessage"] ?? TempData["InfoMessage"];
+    string bgColor = type == "success" ? "bg-green-50 border-green-400 text-green-800"
+                   : type == "error"   ? "bg-red-50 border-red-400 text-red-800"
+                                       : "bg-blue-50 border-blue-400 text-blue-800";
+    string icon = type == "success" ? "fa-circle-check text-green-500"
+                : type == "error"   ? "fa-circle-xmark text-red-500"
+                                    : "fa-circle-info text-blue-500";
+
+    <div id="notification" class="fixed top-4 right-4 z-[999] px-4 py-3 rounded-xl shadow-lg border toast-enter @bgColor max-w-sm">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid @icon text-lg"></i>
+            <span class="font-medium flex-1 text-sm">@message</span>
+            <button onclick="dismissToastNotif()" class="text-gray-400 hover:text-gray-600 transition-colors text-lg leading-none">&times;</button>
+        </div>
+    </div>
+    <script>
+        function dismissToastNotif() {
+            const n = document.getElementById('notification');
+            if (!n) return;
+            n.classList.add('toast-exit');
+            setTimeout(() => n?.remove(), 400);
+        }
+        setTimeout(dismissToastNotif, 4500);
+    </script>
+}
+
+<!-- Global Search Overlay -->
+<div id="searchOverlay" class="fixed inset-0 z-[200] bg-black/50 hidden items-start justify-center pt-24">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden border border-gray-200">
+        <div class="flex items-center border-b border-gray-100 px-4">
+            <i class="fa-solid fa-magnifying-glass text-gray-400 text-sm"></i>
+            <input id="globalSearch" type="text" placeholder="Search pages or jump to..."
+                   class="flex-1 py-4 px-3 text-gray-900 placeholder-gray-400 focus:outline-none text-sm" autocomplete="off"/>
+            <kbd class="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 font-mono">Esc</kbd>
+        </div>
+        <div id="searchResults" class="py-2 max-h-72 overflow-y-auto">
+            <p class="text-xs text-gray-400 uppercase tracking-wide px-4 pt-1 pb-1">Pages</p>
+            <a href="/overview"       class="srLink flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-lg mx-1 transition-colors text-sm" data-label="Overview"><i class="fa-solid fa-house w-4 text-gray-400"></i> Overview</a>
+            <a href="/Mission"        class="srLink flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-lg mx-1 transition-colors text-sm" data-label="Tasks"><i class="fa-solid fa-list-check w-4 text-gray-400"></i> Tasks</a>
+            <a href="/TimeTracking"   class="srLink flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-lg mx-1 transition-colors text-sm" data-label="Time Tracking"><i class="fa-solid fa-stopwatch w-4 text-gray-400"></i> Time Tracking</a>
+            <a href="/Clients"        class="srLink flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-lg mx-1 transition-colors text-sm" data-label="Clients"><i class="fa-solid fa-users w-4 text-gray-400"></i> Clients</a>
+            <a href="/Project"        class="srLink flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-lg mx-1 transition-colors text-sm" data-label="Projects"><i class="fa-solid fa-folder w-4 text-gray-400"></i> Projects</a>
+            <a href="/invoice"        class="srLink flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-lg mx-1 transition-colors text-sm" data-label="Invoices"><i class="fa-solid fa-file-invoice w-4 text-gray-400"></i> Invoices</a>
+        </div>
+        <div class="border-t border-gray-100 px-4 py-2 flex gap-4 text-xs text-gray-400 bg-gray-50">
+            <span><kbd class="border border-gray-200 rounded px-1 bg-white">↑</kbd><kbd class="border border-gray-200 rounded px-1 ml-0.5 bg-white">↓</kbd> navigate</span>
+            <span><kbd class="border border-gray-200 rounded px-1 bg-white">Enter</kbd> open</span>
+            <span><kbd class="border border-gray-200 rounded px-1 bg-white">Esc</kbd> close</span>
+        </div>
+    </div>
+</div>
+
+<div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="flex h-screen w-16 flex-col justify-between border-e border-gray-100 bg-white shadow-sm relative z-20">
+        <div>
+            <!-- Logo -->
+            <div class="flex h-16 items-center px-3 border-b border-gray-100">
+                <span class="flex size-10 items-center justify-center rounded-xl bg-gray-900 shrink-0">
+                    <img src="/Image/Do Flow.png" class="h-7 w-7 object-contain brightness-0 invert" alt="Logo" />
+                </span>
+                <span class="nav-label font-bold text-gray-900 text-base">SoloPro</span>
+            </div>
+
+            <div class="px-2 py-3 space-y-0.5">
+                @if(User.IsInRole("Admin"))
+                {
+                    <a href="/AdminDashboard"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "AdminDashboard" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/user-gear.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Admin Panel</span>
+                    </a>
+                    <a asp-action="AddNewRole" asp-controller="Role"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+                        <img src="/Image/coordinate.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Add Role</span>
+                    </a>
+                    <div class="border-t border-gray-100 my-1"></div>
+                }
+
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <!-- Search button -->
+                    <button onclick="openSearch()" title="Search (press /)"
+                            class="flex items-center w-full rounded-xl px-2 py-2.5 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                        <i class="fa-solid fa-magnifying-glass h-5 w-5 shrink-0 text-base leading-5 flex items-center justify-center" style="width:1.25rem"></i>
+                        <span class="nav-label text-sm font-medium">Search <kbd class="text-xs border border-gray-300 rounded px-1 ml-1">/</kbd></span>
+                    </button>
+
+                    <div class="border-t border-gray-100 my-1"></div>
+
+                    <a href="/overview"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "Overview" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/home-button.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Overview</span>
+                    </a>
+                    <a href="/Mission"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "Mission" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/done.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Tasks</span>
+                    </a>
+                    <a href="/TimeTracking"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "TimeTracking" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/stopwatch.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Time Tracking</span>
+                    </a>
+                    <a href="/Clients"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "Clients" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/customer.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Clients</span>
+                    </a>
+                    <a href="/Project"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "Project" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/file-management.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Projects</span>
+                    </a>
+                    <a href="/invoice"
+                       class="flex items-center rounded-xl px-2 py-2.5 transition-colors @(ctrl == "Invoice" ? "nav-active" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700")">
+                        <img src="/Image/bill.png" class="h-5 w-5 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Invoices</span>
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="Register" asp-controller="Freelancer" class="flex items-center rounded-xl px-2 py-2.5 text-gray-500 hover:bg-gray-50 transition-colors">
+                        <img src="/Image/register.png" class="h-6 w-6 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Register</span>
+                    </a>
+                    <a asp-action="Login" asp-controller="Freelancer" class="flex items-center rounded-xl px-2 py-2.5 text-gray-500 hover:bg-gray-50 transition-colors">
+                        <img src="/Image/login.png" class="h-6 w-6 shrink-0" />
+                        <span class="nav-label text-sm font-medium">Login</span>
+                    </a>
+                }
+            </div>
+        </div>
+
+        @if (User.Identity.IsAuthenticated)
+        {
+            <div class="px-2 pb-4 border-t border-gray-100 pt-2">
+                <a asp-action="Logout" asp-controller="Freelancer"
+                   class="flex items-center rounded-xl px-2 py-2.5 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+                    <img src="/Image/logout.png" class="h-6 w-6 shrink-0" />
+                    <span class="nav-label text-sm font-medium">Logout</span>
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto bg-gray-50 p-6 sm:p-8">
+        @RenderBody()
+    </main>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script>
+    /* ── Search overlay ── */
+    const overlay = document.getElementById('searchOverlay');
+    const input   = document.getElementById('globalSearch');
+    let selectedIdx = -1;
+
+    function openSearch() {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        input.value = '';
+        input.focus();
+        filterSearch('');
+        selectedIdx = -1;
+    }
+    function closeSearch() {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+    }
+    function filterSearch(q) {
+        q = q.toLowerCase();
+        const links = document.querySelectorAll('.srLink');
+        links.forEach(a => {
+            const show = !q || a.dataset.label.toLowerCase().includes(q);
+            a.style.display = show ? 'flex' : 'none';
+        });
+        selectedIdx = -1;
+    }
+    function navigateSearch(dir) {
+        const visible = [...document.querySelectorAll('.srLink')].filter(a => a.style.display !== 'none');
+        if (!visible.length) return;
+        visible.forEach(a => a.classList.remove('bg-blue-50','text-blue-700'));
+        selectedIdx = (selectedIdx + dir + visible.length) % visible.length;
+        visible[selectedIdx].classList.add('bg-blue-50','text-blue-700');
+        visible[selectedIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    input.addEventListener('input', e => filterSearch(e.target.value));
+    input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); navigateSearch(1); }
+        if (e.key === 'ArrowUp')   { e.preventDefault(); navigateSearch(-1); }
+        if (e.key === 'Enter') {
+            const visible = [...document.querySelectorAll('.srLink')].filter(a => a.style.display !== 'none');
+            if (selectedIdx >= 0 && visible[selectedIdx]) visible[selectedIdx].click();
+        }
+    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeSearch(); });
+
+    /* ── Keyboard shortcuts ── */
+    document.addEventListener('keydown', e => {
+        const tag = document.activeElement.tagName;
+        if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(tag)) {
+            e.preventDefault(); openSearch();
+        }
+        if (e.key === 'Escape') {
+            closeSearch();
+            // close any visible modals
+            document.querySelectorAll('#modalOverlay, [id^="delete-modal-"], [id^="delete-form-"]').forEach(m => {
+                if (!m.id.includes('sumit')) m.classList.add('hidden');
+            });
+        }
+    });
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
